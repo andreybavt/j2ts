@@ -121,13 +121,16 @@ public class JavaToTStransformer {
         List<CtEnumValue<?>> enumValues = member.getEnumValues();
         for (int i = 0; i < enumValues.size(); i++) {
             CtEnumValue<?> ev = enumValues.get(i);
-            sb.append(MessageFormat.format(indentation + "{0}", ev.getSimpleName()));
+            sb.append(indentation + ev.getSimpleName());
 
             CtExpression<?> defaultExpression = ev.getDefaultExpression();
             if (defaultExpression instanceof CtConstructorCall) {
                 List arguments = ((CtConstructorCall) defaultExpression).getArguments();
+                sb.append(" = ");
                 if (!arguments.isEmpty()) {
-                    sb.append(" = " + arguments.get(0));
+                    sb.append(arguments.get(0));
+                } else {
+                    sb.append("\"" + ev.getSimpleName() + "\"");
                 }
             }
             if (i != enumValues.size() - 1) {
