@@ -6,7 +6,7 @@
 ## Installation
 `mvn clean compile assembly:single`
 ## Usage
-`jtots JAVA_INPUT_FILE_PATH [TS_OUTPUT_FILE_PATH]`
+`j2ts JAVA_INPUT_FILE_PATH [TS_OUTPUT_FILE_PATH]`
 
 1st argument is mandatory
 
