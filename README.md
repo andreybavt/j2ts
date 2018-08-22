@@ -1,4 +1,4 @@
-# A tool to convert java class to a TypeScript interfaces
+# A tool to convert java class to TypeScript interfaces
    A tool performs static analysis of an input java file, extracting fields and subclasses. 
 
 ## Requirements
