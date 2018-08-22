@@ -65,6 +65,7 @@ public class JavaToTStransformer {
 
     public static class TypescriptClass {
         final String name;
+        String superClassName;
         final List<TypescriptField> fields = new ArrayList<>();
 
         TypescriptClass(String name) {
@@ -93,6 +94,9 @@ public class JavaToTStransformer {
         }
 
         TypescriptClass tsClass = new TypescriptClass(className);
+        if (cls.getSuperclass() != null) {
+            tsClass.superClassName = cls.getSuperclass().getSimpleName();
+        }
 
         for (CtTypeMember member : cls.getTypeMembers()) {
             if (member instanceof CtField && !member.getModifiers().contains(ModifierKind.PRIVATE)) {
@@ -187,7 +191,8 @@ public class JavaToTStransformer {
 
     private String toString(TypescriptClass tsClass) {
         StringBuilder sb = new StringBuilder();
-        sb.append(MessageFormat.format("export interface {0} '{'\n", tsClass.name));
+        String extendsClause = tsClass.superClassName != null ? " extends " + tsClass.superClassName : "";
+        sb.append(MessageFormat.format("export interface {0}{1} '{'\n", tsClass.name, extendsClause));
         for (TypescriptField field : tsClass.fields) {
             sb.append(MessageFormat.format(indentation + "{0}: {1};\n", field.name, field.clazz));
         }
