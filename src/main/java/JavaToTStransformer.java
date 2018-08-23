@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 import spoon.Launcher;
 import spoon.reflect.code.CtConstructorCall;
 import spoon.reflect.code.CtExpression;
+import spoon.reflect.code.CtLiteral;
 import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtEnum;
 import spoon.reflect.declaration.CtEnumValue;
@@ -43,21 +44,22 @@ public class JavaToTStransformer {
     private static final Map<String, String> JAVA_TS_TYPE_MATCHING = new HashMap<>();
 
     static {
-        JAVA_TS_TYPE_MATCHING.put("String", "string");
-        JAVA_TS_TYPE_MATCHING.put("Character", "string");
+        JAVA_TS_TYPE_MATCHING.put("java.lang.String", "string");
+        JAVA_TS_TYPE_MATCHING.put("java.lang.Character", "string");
         JAVA_TS_TYPE_MATCHING.put("char", "string");
         JAVA_TS_TYPE_MATCHING.put("byte", "number");
-        JAVA_TS_TYPE_MATCHING.put("Byte", "number");
+        JAVA_TS_TYPE_MATCHING.put("java.lang.Byte", "number");
         JAVA_TS_TYPE_MATCHING.put("int", "number");
-        JAVA_TS_TYPE_MATCHING.put("Integer", "number");
+        JAVA_TS_TYPE_MATCHING.put("java.lang.Integer", "number");
         JAVA_TS_TYPE_MATCHING.put("float", "number");
-        JAVA_TS_TYPE_MATCHING.put("Float", "number");
+        JAVA_TS_TYPE_MATCHING.put("java.lang.Float", "number");
         JAVA_TS_TYPE_MATCHING.put("double", "number");
-        JAVA_TS_TYPE_MATCHING.put("Double", "number");
+        JAVA_TS_TYPE_MATCHING.put("java.lang.Double", "number");
         JAVA_TS_TYPE_MATCHING.put("long", "number");
-        JAVA_TS_TYPE_MATCHING.put("Long", "number");
+        JAVA_TS_TYPE_MATCHING.put("java.lang.Long", "number");
         JAVA_TS_TYPE_MATCHING.put("boolean", "boolean");
-        JAVA_TS_TYPE_MATCHING.put("Boolean", "boolean");
+        JAVA_TS_TYPE_MATCHING.put("java.lang.Boolean", "boolean");
+        JAVA_TS_TYPE_MATCHING.put("com.google.gson.JsonObject", "Dict<string>");
 
     }
 
@@ -127,7 +129,7 @@ public class JavaToTStransformer {
             if (defaultExpression instanceof CtConstructorCall) {
                 List arguments = ((CtConstructorCall) defaultExpression).getArguments();
                 sb.append(" = ");
-                if (!arguments.isEmpty()) {
+                if (!arguments.isEmpty() && arguments.get(0) instanceof CtLiteral) {
                     sb.append(arguments.get(0));
                 } else {
                     sb.append("\"" + ev.getSimpleName() + "\"");
@@ -156,8 +158,8 @@ public class JavaToTStransformer {
                 return MessageFormat.format("Map<{0}, {1}>", getType(type.getActualTypeArguments().get(0)), getType(type.getActualTypeArguments().get(1)));
             }
 
-            if (JAVA_TS_TYPE_MATCHING.containsKey(type.getSimpleName())) {
-                return JAVA_TS_TYPE_MATCHING.get(type.getSimpleName());
+            if (JAVA_TS_TYPE_MATCHING.containsKey(type.getQualifiedName())) {
+                return JAVA_TS_TYPE_MATCHING.get(type.getQualifiedName());
             }
             return type.getSimpleName();
         } else {
@@ -180,6 +182,15 @@ public class JavaToTStransformer {
         String res = new JavaToTStransformer().parse(new String(byteContent));
         if (args.length > 1) {
             String outPath = args[1];
+
+            if (Files.isDirectory(Paths.get(outPath))) {
+                String fname = Paths.get(args[0]).getFileName().toString().replaceFirst("[.][^.]+$", "");
+                fname = fname.replaceAll("([A-Z])", "-$1").toLowerCase();
+                if (fname.startsWith("-")) {
+                    fname = fname.substring(1);
+                }
+                outPath = Paths.get(outPath, fname + ".ts").toString();
+            }
             logger.info(String.format("Writing result to %s", outPath));
             Files.write(Paths.get(outPath).toAbsolutePath(), res.getBytes());
         } else {
