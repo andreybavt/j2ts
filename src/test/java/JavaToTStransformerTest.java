@@ -1,19 +1,26 @@
-import static org.junit.jupiter.api.Assertions.*;
+import spoon.Launcher;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class JavaToTStransformerTest {
+    private String getTsCode(String java) {
+        JavaToTStransformer javaToTStransformer = new JavaToTStransformer(false);
+        javaToTStransformer.parseType(Launcher.parseClass(java));
+        return javaToTStransformer.toString();
+    }
 
     @org.junit.jupiter.api.Test
     void parsePrivatePublic() {
-        String java = String.format("class Test {\n    private String priv;\n    public String pub;\n}");
-        String result = "export enum TestEnum { \nA,\nB,\nC\n}";
-        assertEquals(result, new JavaToTStransformer(false).parse(java));
+        String java = "class Test {\n    private String priv;\n    public String pub;\n}";
+        String result = "export interface Test {\npub: string;\n}";
+        assertEquals(result, getTsCode(java));
     }
 
     @org.junit.jupiter.api.Test
     void parseEnum() {
         String java = "enum TestEnum {\n    A, B, C\n}";
-        String result = "export enum TestEnum { \nA,\nB,\nC\n}";
-        assertEquals(result, new JavaToTStransformer(false).parse(java));
+        String result = "export enum TestEnum { \nA = \"A\",\nB = \"B\",\nC = \"C\"\n}";
+        assertEquals(result, getTsCode(java));
     }
 
     @org.junit.jupiter.api.Test
@@ -35,12 +42,12 @@ class JavaToTStransformerTest {
                 "BALL_TREE = \"ball_tree\",\n" +
                 "BRUTE = \"brute\"\n" +
                 "}";
-        assertEquals(result, new JavaToTStransformer(false).parse(java));
+        assertEquals(result, getTsCode(java));
     }
 
     @org.junit.jupiter.api.Test
     void parseBasicClasses() {
-        String content = "class Scratch {\n" +
+        String java = "class Scratch {\n" +
                 "    public byte aByte;\n" +
                 "    public int anInt;\n" +
                 "    public long aLong;\n" +
@@ -66,6 +73,6 @@ class JavaToTStransformerTest {
                 "aLongW: number;\n" +
                 "string: string;\n" +
                 "}";
-        assertEquals(result, new JavaToTStransformer(false).parse(content));
+        assertEquals(result, getTsCode(java));
     }
 }

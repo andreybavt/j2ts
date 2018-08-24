@@ -79,7 +79,7 @@ public class JavaToTStransformer {
         this.params = new HashMap<>();
     }
 
-    private void parseType(CtType<?> type) {
+    public void parseType(CtType<?> type) {
         if (type == null || visitedTypes.containsKey(type.getQualifiedName())) {
             return;
         }
@@ -263,7 +263,7 @@ public class JavaToTStransformer {
                 }
 
                 List<String> types = entry.getValue().stream().map(Object::toString).collect(Collectors.toList());
-                fileSb.append(String.join("\n", String.join("\n\n", types)));
+                fileSb.append(String.join("\n", String.join("\n\n", types)).trim());
 
 
                 logger.info(String.format("Writing to %s", path));
@@ -273,8 +273,12 @@ public class JavaToTStransformer {
                 Files.write(path, fileSb.toString().getBytes());
             }
         } else {
-            System.out.println("\n\n---------------------------------------------------------------------------\n" + String.join("\n", javaToTStransformer.visitedTypes.values().stream().map(Object::toString).collect(Collectors.toList())));
+            System.out.println("\n\n---------------------------------------------------------------------------\n" + javaToTStransformer.toString());
         }
+    }
+
+    public String toString() {
+        return String.join("\n", visitedTypes.values().stream().map(Object::toString).collect(Collectors.toList())).trim();
     }
 
     private static Map<String, List<TypescriptType>> groupByFilename(JavaToTStransformer javaToTStransformer) {
@@ -326,7 +330,7 @@ public class JavaToTStransformer {
         return arg.startsWith("-") && validArgs.contains(arg.substring(1));
     }
 
-    public static class TypescriptType {
+    public abstract static class TypescriptType {
         String name;
         String qualifiedName;
         String path;
