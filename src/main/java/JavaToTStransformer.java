@@ -4,6 +4,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -271,7 +272,7 @@ public class JavaToTStransformer {
                 if (Files.notExists(path.getParent())) {
                     Files.createDirectories(path.getParent());
                 }
-                Files.write(path, fileSb.toString().getBytes());
+                Files.write(path, ((Files.exists(path) ? "\n\n" : "") + fileSb.toString()).getBytes(), StandardOpenOption.APPEND);
             }
         } else {
             System.out.println("\n\n---------------------------------------------------------------------------\n" + javaToTStransformer.toString());
@@ -299,7 +300,7 @@ public class JavaToTStransformer {
         Set<String> collect = type.map(t -> {
             String fr = params.get("-fr");
             String tsFilePath = getOutPath(t);
-            String tsRelativeToRoot = Paths.get(fr).relativize(Paths.get(tsFilePath)).toString().split(".ts")[0];
+            String tsRelativeToRoot = Paths.get(fr).relativize(Paths.get(tsFilePath)).toString().split("\\.ts")[0];
             return String.format("import {%s} from '@%s';", t.getSimpleName(), tsRelativeToRoot);
         }).collect(Collectors.toSet());
         return String.join("\n", collect);
