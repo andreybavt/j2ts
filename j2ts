@@ -1,4 +1,4 @@
 #! /bin/bash
 
 [[ $(readlink $0) ]] && SCRIPTPATH=$(dirname "$(readlink $0)") || SCRIPTPATH=$(dirname $0)
-java -jar `ls $SCRIPTPATH/target/java-to-typescript-*jar | head -1` $1 $2
+java -jar `ls $SCRIPTPATH/target/java-to-typescript-*jar | head -1` "$@"
