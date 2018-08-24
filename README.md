@@ -2,6 +2,7 @@
    A tool performs static analysis of an input java file, extracting fields and subclasses. 
 
 ## Requirements
+  - Java 8
   - [maven](https://maven.apache.org/install.html)
 ## Installation
 `mvn clean compile assembly:single`
