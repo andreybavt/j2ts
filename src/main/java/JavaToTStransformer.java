@@ -53,6 +53,7 @@ public class JavaToTStransformer {
         JAVA_TS_TYPE_MATCHING.put("boolean", "boolean");
         JAVA_TS_TYPE_MATCHING.put("java.lang.Boolean", "boolean");
         JAVA_TS_TYPE_MATCHING.put("com.google.gson.JsonObject", "Dict<string>");
+        JAVA_TS_TYPE_MATCHING.put("com.google.gson.JsonArray", "any[]");
 
     }
 
@@ -237,7 +238,7 @@ public class JavaToTStransformer {
             try {
                 run(javaToTStransformer, params);
             } catch (IllegalArgumentException e) {
-                if (!params.containsKey("-i")) {
+                if (params.containsKey("-i")) {
                     throw e;
                 }
             }
