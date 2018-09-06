@@ -4,7 +4,6 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +24,7 @@ import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtEnum;
 import spoon.reflect.declaration.CtEnumValue;
 import spoon.reflect.declaration.CtField;
+import spoon.reflect.declaration.CtModifiable;
 import spoon.reflect.declaration.CtType;
 import spoon.reflect.declaration.ModifierKind;
 import spoon.reflect.reference.CtArrayTypeReference;
@@ -104,19 +104,23 @@ public class JavaToTStransformer {
             parseType(cls.getSuperclass().getTypeDeclaration());
         }
 
-        cls.getElements(f -> f instanceof CtField && !((CtField) f).hasModifier(ModifierKind.PRIVATE) && f.getParent() == cls).forEach(f -> {
-            CtField field = (CtField) f;
-            if (field.getType().getDeclaration() != null) {
-                parseType(field.getType().getDeclaration());
-            }
-            for (CtTypeReference<?> actualTypeArgument : field.getType().getActualTypeArguments()) {
-                if (actualTypeArgument.getDeclaration() != null) {
-                    tsClass.imports.add(actualTypeArgument.getDeclaration());
-                    parseType(actualTypeArgument.getDeclaration());
+        cls.getElements(f -> (f instanceof CtField || f instanceof CtType) && !((CtModifiable) f).hasModifier(ModifierKind.PRIVATE) && f.getParent() == cls).forEach(f -> {
+            if (f instanceof CtField) {
+                CtField field = (CtField) f;
+                if (field.getType().getDeclaration() != null) {
+                    parseType(field.getType().getDeclaration());
                 }
+                for (CtTypeReference<?> actualTypeArgument : field.getType().getActualTypeArguments()) {
+                    if (actualTypeArgument.getDeclaration() != null) {
+                        tsClass.imports.add(actualTypeArgument.getDeclaration());
+                        parseType(actualTypeArgument.getDeclaration());
+                    }
+                }
+                tsClass.imports.add(field.getType().getDeclaration());
+                tsClass.fields.add(new TypescriptField(getType(field.getType()), field.getSimpleName()));
+            } else if (f instanceof CtType) {
+                parseType((CtType) f);
             }
-            tsClass.imports.add(field.getType().getDeclaration());
-            tsClass.fields.add(new TypescriptField(getType(field.getType()), field.getSimpleName()));
 
         });
         tsClass.path = getOutPath(cls);
@@ -272,7 +276,7 @@ public class JavaToTStransformer {
                 if (Files.notExists(path.getParent())) {
                     Files.createDirectories(path.getParent());
                 }
-                Files.write(path, ((Files.exists(path) ? "\n\n" : "") + fileSb.toString()).getBytes(), StandardOpenOption.APPEND);
+                Files.write(path, ((Files.exists(path) ? "\n\n" : "") + fileSb.toString()).getBytes());
             }
         } else {
             System.out.println("\n\n---------------------------------------------------------------------------\n" + javaToTStransformer.toString());
