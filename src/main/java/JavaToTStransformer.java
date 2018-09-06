@@ -24,7 +24,6 @@ import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtEnum;
 import spoon.reflect.declaration.CtEnumValue;
 import spoon.reflect.declaration.CtField;
-import spoon.reflect.declaration.CtModifiable;
 import spoon.reflect.declaration.CtType;
 import spoon.reflect.declaration.ModifierKind;
 import spoon.reflect.reference.CtArrayTypeReference;
@@ -104,27 +103,32 @@ public class JavaToTStransformer {
             parseType(cls.getSuperclass().getTypeDeclaration());
         }
 
-        cls.getElements(f -> (f instanceof CtField || f instanceof CtType) && !((CtModifiable) f).hasModifier(ModifierKind.PRIVATE) && f.getParent() == cls).forEach(f -> {
-            if (f instanceof CtField) {
-                CtField field = (CtField) f;
-                if (field.getType().getDeclaration() != null) {
-                    parseType(field.getType().getDeclaration());
-                }
-                for (CtTypeReference<?> actualTypeArgument : field.getType().getActualTypeArguments()) {
-                    if (actualTypeArgument.getDeclaration() != null) {
-                        tsClass.imports.add(actualTypeArgument.getDeclaration());
-                        parseType(actualTypeArgument.getDeclaration());
-                    }
-                }
-                tsClass.imports.add(field.getType().getDeclaration());
-                tsClass.fields.add(new TypescriptField(getType(field.getType()), field.getSimpleName()));
-            } else if (f instanceof CtType) {
-                parseType((CtType) f);
+        cls.getElements(f -> f instanceof CtField && !((CtField) f).hasModifier(ModifierKind.PRIVATE) && f.getParent() == cls).forEach(f -> {
+            CtField field = (CtField) f;
+            if (field.getType().getDeclaration() != null) {
+                parseType(field.getType().getDeclaration());
             }
+            for (CtTypeReference<?> actualTypeArgument : getActualTypes(field.getType())) {
+                tsClass.imports.add(actualTypeArgument.getDeclaration());
+                parseType(actualTypeArgument.getDeclaration());
+            }
+            tsClass.imports.add(field.getType().getDeclaration());
+            tsClass.fields.add(new TypescriptField(getType(field.getType()), field.getSimpleName()));
 
         });
+
         tsClass.path = getOutPath(cls);
         return tsClass;
+    }
+
+    private Set<CtTypeReference> getActualTypes(CtTypeReference type) {
+        Set<CtTypeReference> res = new HashSet<>();
+        if (!type.getActualTypeArguments().isEmpty()) {
+            res.addAll(type.getActualTypeArguments().stream().flatMap(e -> getActualTypes(e).stream()).filter(e -> e.getDeclaration() != null).collect(Collectors.toSet()));
+        } else if (type.getDeclaration() != null) {
+            res.add(type);
+        }
+        return res;
     }
 
     private String getOutPath(CtType type) {
