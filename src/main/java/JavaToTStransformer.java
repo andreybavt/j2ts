@@ -4,6 +4,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -280,7 +281,12 @@ public class JavaToTStransformer {
                 if (Files.notExists(path.getParent())) {
                     Files.createDirectories(path.getParent());
                 }
-                Files.write(path, ((Files.exists(path) ? "\n\n" : "") + fileSb.toString()).getBytes());
+                if (!Files.exists(path)) {
+
+                    Files.write(path, ((Files.exists(path) ? "\n\n" : "") + fileSb.toString()).getBytes(), Files.exists(path) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE_NEW);
+                } else {
+                    System.out.println("file " + path + "exists, not appending or rewriting");
+                }
             }
         } else {
             System.out.println("\n\n---------------------------------------------------------------------------\n" + javaToTStransformer.toString());
@@ -309,7 +315,7 @@ public class JavaToTStransformer {
             String fr = params.get("-fr");
             String tsFilePath = getOutPath(t);
             String tsRelativeToRoot = Paths.get(fr).relativize(Paths.get(tsFilePath)).toString().split("\\.ts")[0];
-            return String.format("import {%s} from '@%s';", t.getSimpleName(), tsRelativeToRoot);
+            return String.format("import { %s } from '@%s';", t.getSimpleName(), tsRelativeToRoot);
         }).collect(Collectors.toSet());
         return String.join("\n", collect);
     }
@@ -377,7 +383,7 @@ public class JavaToTStransformer {
 
             for (int i = 0; i < this.fields.size(); i++) {
                 TypescriptEnumField val = this.fields.get(i);
-                sb.append(indentation + val.name + " = " + (val.value == null ? "\"" + val.name + "\"" : val.value));
+                sb.append(indentation + val.name + " = " + (val.value == null ? "'" + val.name + "'" : val.value));
                 if (i != this.fields.size() - 1) {
                     sb.append(",");
                 }
