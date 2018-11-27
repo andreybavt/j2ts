@@ -261,6 +261,8 @@ public class JavaToTStransformer {
         if (params.containsKey("-tr")) {
             Map<String, List<TypescriptType>> byFilename = groupByFilename(javaToTStransformer);
 
+            byFilename = filterIfExistsWithSameFirstLine(byFilename);
+
             for (Map.Entry<String, List<TypescriptType>> entry : byFilename.entrySet()) {
                 StringBuilder fileSb = new StringBuilder();
                 Path path = Paths.get(entry.getKey());
@@ -277,20 +279,46 @@ public class JavaToTStransformer {
                 fileSb.append(String.join("\n", String.join("\n\n", types)).trim());
 
 
-                logger.info(String.format("Writing to %s", path));
+                logger.info(String.format("%s to %s", (Files.exists(path) ? "Appending" : "Writing"), path));
                 if (Files.notExists(path.getParent())) {
                     Files.createDirectories(path.getParent());
                 }
-                if (!Files.exists(path)) {
-
-                    Files.write(path, ((Files.exists(path) ? "\n\n" : "") + fileSb.toString()).getBytes(), Files.exists(path) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE_NEW);
-                } else {
-                    System.out.println("file " + path + "exists, not appending or rewriting");
-                }
+                Files.write(path, ((Files.exists(path) ? "\n\n" : "") + fileSb.toString()).getBytes(), Files.exists(path) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE_NEW);
             }
         } else {
             System.out.println("\n\n---------------------------------------------------------------------------\n" + javaToTStransformer.toString());
         }
+    }
+
+    private static Map<String, List<TypescriptType>> filterIfExistsWithSameFirstLine(Map<String, List<TypescriptType>> byFilename) {
+        Map<String, List<TypescriptType>> result = new HashMap<>();
+        for (Map.Entry<String, List<TypescriptType>> fileToTypes : byFilename.entrySet()) {
+            String fpath = fileToTypes.getKey();
+            String fileContent = null;
+            try {
+                fileContent = readFile(fpath);
+                ArrayList<TypescriptType> typesInFile = new ArrayList<>();
+                for (TypescriptType type : fileToTypes.getValue()) {
+                    if (!fileContent.contains(type.toString().split("\n")[0].trim())) {
+                        typesInFile.add(type);
+                    }
+                }
+                if (!typesInFile.isEmpty()) {
+                    result.put(fpath, typesInFile);
+                }
+            } catch (IOException e) {
+                logger.error(e);
+            }
+        }
+        return result;
+    }
+
+    private static String readFile(String pathStr) throws IOException {
+        Path path = Paths.get(pathStr);
+        if (Files.exists(path) && !Files.isDirectory(path)) {
+            return new String(Files.readAllBytes(path));
+        }
+        return "";
     }
 
     public String toString() {
@@ -301,10 +329,12 @@ public class JavaToTStransformer {
         Map<String, List<TypescriptType>> byFilename = new HashMap<>();
 
         for (TypescriptType value : javaToTStransformer.visitedTypes.values()) {
-            if (!byFilename.containsKey(value.path)) {
-                byFilename.put(value.path, new ArrayList<>());
+            if (value != null) {
+                if (!byFilename.containsKey(value.path)) {
+                    byFilename.put(value.path, new ArrayList<>());
+                }
+                byFilename.get(value.path).add(value);
             }
-            byFilename.get(value.path).add(value);
         }
         return byFilename;
     }
