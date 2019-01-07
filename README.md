@@ -1,5 +1,5 @@
 # A tool to convert java class to TypeScript interfaces
-   A tool performs static analysis of an input java file, extracting fields and subclasses. 
+   A tool performs static analysis of an input java file, recursively extracting fields and subclasses. 
 
 ## Requirements
   - Java 8
